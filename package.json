@@ -1,0 +1,12 @@
+{
+  "name": "concurso-contrasena",
+  "version": "1.0.0",
+  "description": "Concurso presencial: la contraseña más segura (práctica para docentes)",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "dev": "node --env-file=.env server.js"
+  },
+  "engines": { "node": ">=18" },
+  "dependencies": { "express": "^4.19.2", "ws": "^8.18.0", "zxcvbn": "^4.4.2" }
+}

@@ -1,0 +1,170 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Reto: la contraseña más segura</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible:wght@400;700&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#f4f1ea;--card:#fff;--ink:#1d2433;--muted:#5f6878;--line:#e0dbcf;--accent:#1f4fd8;--gold:#b8860b;--gold-soft:#fbf1d0;--red:#b3202c;--green:#16794c}
+*{box-sizing:border-box}
+[hidden]{display:none!important}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:"Atkinson Hyperlegible",system-ui,sans-serif;font-size:17px;line-height:1.55}
+.wrap{max-width:560px;margin:0 auto;padding:20px}
+h1{font-size:28px;line-height:1.2;margin:8px 0 6px}
+h2{font-size:20px;margin:0 0 8px}
+.card{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:20px;margin-top:16px}
+label{display:block;font-weight:700;margin:14px 0 6px}
+input[type=text],input[type=password]{font:inherit;width:100%;padding:11px 13px;border:1px solid #cfc9ba;border-radius:8px;background:#fff;color:var(--ink)}
+button{font:inherit;font-weight:700;cursor:pointer;border:0;border-radius:8px;background:var(--accent);color:#fff;padding:11px 20px}
+button.ghost{background:transparent;color:var(--accent);border:1px solid var(--accent)}
+button:focus-visible,input:focus-visible{outline:3px solid #9db6f5;outline-offset:2px}
+.warn{background:var(--gold-soft);border:1px solid #e6d28a;border-radius:10px;padding:12px 14px;margin-top:14px;font-size:16px}
+.chk{display:flex;gap:10px;align-items:flex-start;margin-top:14px;font-weight:400}
+.chk input{margin-top:5px;width:18px;height:18px;flex:none}
+.err{color:var(--red);min-height:1.5em;margin:10px 0 0}
+.ok{color:var(--green);font-weight:700;min-height:1.5em;margin:8px 0 0}
+.muted{color:var(--muted)}
+.mono{font-family:ui-monospace,Consolas,monospace;overflow-wrap:anywhere}
+.bar{height:6px;background:var(--line);border-radius:3px;overflow:hidden;margin:16px 0}
+.bar i{display:block;height:6px;width:30%;background:var(--accent);animation:slide 1.4s ease-in-out infinite}
+@keyframes slide{0%{margin-left:-30%}100%{margin-left:100%}}
+.medal{display:flex;gap:14px;align-items:center;padding:12px 0;border-bottom:1px solid var(--line)}
+.medal:last-child{border-bottom:0}
+.medal b.n{width:42px;height:42px;border-radius:50%;display:grid;place-items:center;background:var(--gold-soft);color:var(--gold);font-size:20px;flex:none}
+.win{background:var(--gold-soft);border-color:#e6d28a;text-align:center}
+.big{font-size:26px;font-weight:700;margin:6px 0}
+.win .big{font-size:30px}
+.pass{display:inline-block;background:#fff;border:1px solid #e6d28a;border-radius:10px;padding:10px 16px;font-size:22px;margin:10px 0}
+ul.f{margin:8px 0 0;padding-left:20px;text-align:left;display:inline-block}
+@media (prefers-reduced-motion:reduce){.bar i{animation:none;width:100%}}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>Reto: la contraseña más segura</h1>
+  <p class="muted" style="margin:0">¿Quién creará la contraseña más difícil de descubrir?</p>
+
+  <section id="reg" class="card" hidden>
+    <form id="rf">
+      <label for="rn" style="margin-top:0">Tu nombre</label>
+      <input type="text" id="rn" autocomplete="off" placeholder="Nombre y apellido">
+      <label for="rp">Tu contraseña inventada</label>
+      <input type="password" id="rp" autocomplete="off">
+      <label class="chk"><input type="checkbox" id="rs"><span>Mostrar lo que escribo</span></label>
+      <div class="warn"><strong>Importante:</strong> escribe una contraseña inventada para este reto. <strong>No uses ninguna contraseña que uses de verdad</strong>, ni parecida.</div>
+      <label class="chk"><input type="checkbox" id="rc"><span>Acepto que mi contraseña inventada se muestre a todos si queda en el top 2.</span></label>
+      <p class="err" id="re" role="alert"></p>
+      <button type="submit">Enviar mi contraseña</button>
+    </form>
+  </section>
+
+  <section id="main" hidden>
+    <div class="card" id="status"></div>
+    <div class="card" id="change" hidden>
+      <h2>Cambiar mi contraseña</h2>
+      <label for="cp" style="margin-top:0">Nueva contraseña inventada</label>
+      <input type="password" id="cp" autocomplete="off">
+      <label class="chk"><input type="checkbox" id="cc"><span>Acepto que se muestre si quedo en el top 2.</span></label>
+      <p class="err" id="ce" role="alert"></p>
+      <button id="cb">Guardar cambio</button>
+      <p class="ok" id="co"></p>
+    </div>
+    <div id="results"></div>
+  </section>
+</div>
+
+<script>
+var $ = function (s) { return document.querySelector(s); };
+var token = null, ws = null, st = null;
+try { token = sessionStorage.getItem('ctk'); } catch (e) {}
+function el(tag, text, cls) { var e = document.createElement(tag); if (text != null) e.textContent = text; if (cls) e.className = cls; return e; }
+
+$('#rs').addEventListener('change', function () { $('#rp').type = this.checked ? 'text' : 'password'; });
+$('#rf').addEventListener('submit', function (ev) {
+  ev.preventDefault();
+  var n = $('#rn').value.trim(), p = $('#rp').value;
+  if (!n || !p) { $('#re').textContent = 'Escribe tu nombre y tu contraseña inventada'; return; }
+  $('#re').textContent = '';
+  fetch('/api/register', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ name: n, pass: p, consent: $('#rc').checked }) })
+    .then(function (r) { return r.json().then(function (d) { return { ok: r.ok, d: d }; }); })
+    .then(function (x) {
+      if (!x.ok) { $('#re').textContent = x.d.error || 'No se pudo registrar'; return; }
+      token = x.d.token; try { sessionStorage.setItem('ctk', token); } catch (e) {}
+      $('#rp').value = ''; connect();
+    })
+    .catch(function () { $('#re').textContent = 'No hay conexión con el servidor. Intenta de nuevo.'; });
+});
+
+function connect() {
+  ws = new WebSocket((location.protocol === 'https:' ? 'wss://' : 'ws://') + location.host + '/ws?role=participante&token=' + token);
+  ws.onmessage = function (ev) { var m = JSON.parse(ev.data); if (m.t === 'c_state') { st = m; render(); } };
+  ws.onclose = function (e) {
+    if (e.code === 4002 || e.code === 4003) { token = null; st = null; try { sessionStorage.removeItem('ctk'); } catch (x) {} render(); return; }
+    if (token) setTimeout(function () { if (token) connect(); }, 1500);
+  };
+}
+
+function render() {
+  $('#reg').hidden = !!st; $('#main').hidden = !st;
+  if (!st) return;
+  var s = $('#status'); s.textContent = '';
+  var ph = st.phase;
+  s.appendChild(el('h2', 'Hola, ' + st.me.name));
+  if (ph === 'registro') {
+    s.appendChild(el('p', 'Recibimos tu contraseña. Estamos en espera de la evaluación. Mientras el registro siga abierto, puedes cambiarla.'));
+    var b = el('div', '', 'bar'); b.appendChild(el('i')); s.appendChild(b);
+  } else if (ph === 'cerrado') {
+    s.appendChild(el('p', 'El registro está cerrado. Estamos en espera de la evaluación.'));
+    var b2 = el('div', '', 'bar'); b2.appendChild(el('i')); s.appendChild(b2);
+  } else if (ph === 'resultados') {
+    s.appendChild(el('p', 'Evaluando las contraseñas… En un momento verás el resultado.'));
+    var b3 = el('div', '', 'bar'); b3.appendChild(el('i')); s.appendChild(b3);
+  } else if (ph === 'top2') {
+    s.appendChild(el('p', 'Estos son los dos finalistas. Pronto sabremos quién ganó.'));
+  } else {
+    s.appendChild(el('p', 'Ya tenemos ganador o ganadora.'));
+  }
+  $('#change').hidden = ph !== 'registro';
+
+  var r = $('#results'); r.textContent = '';
+  if (ph === 'top2' || ph === 'ganador') {
+    if (ph === 'ganador' && st.finalists) {
+      st.finalists.forEach(function (f) {
+        var c = el('div', null, 'card' + (f.rank === 1 ? ' win' : ''));
+        c.appendChild(el('div', f.rank === 1 ? 'Ganador o ganadora' : 'Segundo lugar', 'muted'));
+        c.appendChild(el('div', f.name, 'big'));
+        if (f.pass) { c.appendChild(el('div', f.pass, 'pass mono')); c.appendChild(document.createElement('br')); }
+        else c.appendChild(el('p', 'Prefirió no mostrar su contraseña, pero estas son sus características:', 'muted'));
+        var u = el('ul', null, 'f'); f.facts.forEach(function (t) { u.appendChild(el('li', t)); }); c.appendChild(u);
+        c.appendChild(el('p', 'Con un ataque muy rápido, tardaría: ' + f.time + '.', 'muted'));
+        r.appendChild(c);
+      });
+    } else {
+      var c2 = el('div', null, 'card'); c2.appendChild(el('h2', 'Los dos finalistas'));
+      st.top2.forEach(function (t) { var m = el('div', null, 'medal'); m.appendChild(el('b', String(t.rank), 'n')); m.appendChild(el('span', t.name)); c2.appendChild(m); });
+      r.appendChild(c2);
+    }
+    var mine = el('div', null, 'card'); mine.appendChild(el('h2', 'Tu resultado'));
+    mine.appendChild(el('p', 'Quedaste en el lugar ' + st.mine.rank + ' de ' + st.total + '.'));
+    mine.appendChild(el('p', 'Con un ataque muy rápido (10 mil millones de intentos por segundo), tu contraseña tardaría: ' + st.mine.time + '.'));
+    if (st.mine.tips.length) { var ul = el('ul'); st.mine.tips.forEach(function (t) { ul.appendChild(el('li', t)); }); mine.appendChild(ul); }
+    r.appendChild(mine);
+  }
+}
+
+$('#cb').addEventListener('click', function () {
+  var p = $('#cp').value; $('#co').textContent = '';
+  if (!p) { $('#ce').textContent = 'Escribe la nueva contraseña'; return; }
+  $('#ce').textContent = '';
+  fetch('/api/update', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ token: token, pass: p, consent: $('#cc').checked }) })
+    .then(function (r) { return r.json().then(function (d) { return { ok: r.ok, d: d }; }); })
+    .then(function (x) { if (!x.ok) { $('#ce').textContent = x.d.error || 'No se pudo guardar'; return; } $('#cp').value = ''; $('#co').textContent = 'Contraseña actualizada'; });
+});
+
+if (token) connect(); else render();
+</script>
+</body>
+</html>

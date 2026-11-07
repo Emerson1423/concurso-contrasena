@@ -1,0 +1,213 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Concurso: panel del instructor</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#0f1318;--panel:#161c24;--line:#27313e;--text:#d7dee7;--muted:#7f8c9b;--gold:#f0c35a;--gold-soft:#2e2813;--red:#ff5a5f;--teal:#38d3ba;--blue:#6aa6ff}
+*{box-sizing:border-box}
+[hidden]{display:none!important}
+body{margin:0;background:var(--bg);color:var(--text);font-family:"IBM Plex Sans",system-ui,sans-serif;font-size:15px}
+.mono{font-family:"IBM Plex Mono",ui-monospace,monospace}
+button{font:inherit;cursor:pointer;color:var(--text);background:transparent;border:1px solid var(--line);border-radius:6px;padding:8px 14px}
+button:hover{border-color:var(--muted)}
+button:focus-visible,input:focus-visible,select:focus-visible{outline:2px solid var(--blue);outline-offset:2px}
+button.go{background:var(--gold);border-color:var(--gold);color:#1a1405;font-weight:500}
+input,select{font:inherit;background:var(--panel);color:var(--text);border:1px solid var(--line);border-radius:6px;padding:9px 12px;width:100%}
+#gate{max-width:360px;margin:16vh auto 0;padding:0 20px}
+#gate h1{font-size:24px;font-weight:500;margin:0 0 6px}
+#gate p{color:var(--muted);margin:0 0 14px}
+#gate .err{color:var(--red);min-height:1.4em;margin:8px 0}
+.top{display:flex;flex-wrap:wrap;gap:12px;align-items:center;justify-content:space-between;padding:14px 20px;border-bottom:1px solid var(--line)}
+.top h1{font-size:18px;font-weight:500;margin:0}
+.ctrl{display:flex;flex-wrap:wrap;gap:8px}
+.phases{display:flex;gap:8px;flex-wrap:wrap;padding:14px 20px 0}
+.ph{padding:6px 14px;border-radius:999px;border:1px solid var(--line);color:var(--muted)}
+.ph.past{color:var(--text);border-color:var(--muted)}
+.ph.now{color:#1a1405;background:var(--gold);border-color:var(--gold);font-weight:500}
+.hint{padding:10px 20px 0;color:var(--muted)}
+.podium{margin:16px 20px 0;display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:12px}
+.pod{background:var(--gold-soft);border:1px solid #5a4a1a;border-radius:10px;padding:16px;text-align:center}
+.pod .lbl{color:var(--muted);font-size:13px}
+.pod .nm{font-size:26px;font-weight:500;margin:4px 0}
+.pod .pw{display:inline-block;font-family:"IBM Plex Mono",monospace;font-size:20px;color:var(--gold);background:#1a1405;border-radius:8px;padding:8px 14px;margin:8px 0;word-break:break-all}
+.pod ul{list-style:none;padding:0;margin:8px 0 0;color:var(--muted);font-size:13px}
+.main{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:16px;padding:16px 20px 24px}
+@media (max-width:860px){.main{grid-template-columns:1fr}}
+.panel{background:var(--panel);border:1px solid var(--line);border-radius:10px;overflow:hidden}
+.panel h2{margin:0;padding:10px 14px;font-size:14px;font-weight:500;color:var(--muted);border-bottom:1px solid var(--line)}
+.pad{padding:14px}
+table{width:100%;border-collapse:collapse}
+td,th{padding:8px 12px;text-align:left;border-bottom:1px solid var(--line);vertical-align:top;font-weight:400}
+th{color:var(--muted);font-size:13px}
+.dot{display:inline-block;width:9px;height:9px;border-radius:50%;background:var(--line);margin-right:8px}
+.dot.on{background:var(--teal)}
+.tag{margin-left:8px;font-size:12px;color:var(--muted)}
+.bad{color:var(--red)}
+.good{color:var(--teal)}
+.rk{font-family:"IBM Plex Mono",monospace;color:var(--gold)}
+.row2{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:8px}
+.pred{border-top:1px solid var(--line);padding:10px 0;display:flex;gap:10px;justify-content:space-between;align-items:flex-start}
+.pred small{color:var(--muted)}
+.sum{margin:0 0 12px;padding:10px 12px;border-radius:8px;background:var(--gold-soft);color:var(--gold)}
+</style>
+</head>
+<body>
+
+<main id="gate">
+  <h1>Concurso: panel del instructor</h1>
+  <p>Solo para el instructor.</p>
+  <form id="gf"><input id="gk" type="password" placeholder="Clave de instructor" aria-label="Clave de instructor"><div class="err" id="ge" role="alert"></div><button class="go" type="submit">Entrar</button></form>
+</main>
+
+<div id="console" hidden>
+  <div class="top">
+    <h1>Concurso: la contraseña más segura</h1>
+    <div class="ctrl">
+      <button id="back">Atrás</button>
+      <button class="go" id="next">Siguiente</button>
+      <button id="reset">Reiniciar concurso</button>
+    </div>
+  </div>
+  <div class="phases" id="phases"></div>
+  <div class="hint" id="hint"></div>
+  <div class="podium" id="podium"></div>
+
+  <div class="main">
+    <section class="panel"><h2 id="ptitle">Participantes</h2>
+      <table><thead><tr id="thead"></tr></thead><tbody id="tb"></tbody></table>
+    </section>
+    <section class="panel"><h2>Cuaderno de predicciones</h2>
+      <div class="pad">
+        <div class="sum" id="sum" hidden></div>
+        <div class="row2">
+          <select id="ps" aria-label="Quién habla"></select>
+          <select id="pp" aria-label="A quién cree que ganó"></select>
+        </div>
+        <input id="pw" placeholder="¿Por qué lo cree? (opcional)" aria-label="Razón">
+        <div style="margin-top:8px"><button class="go" id="psave">Guardar predicción</button></div>
+        <div id="plist" style="margin-top:14px"></div>
+      </div>
+    </section>
+  </div>
+</div>
+
+<script>
+var $ = function (s) { return document.querySelector(s); };
+var key = '', ws = null, S = { phase: 'registro', parts: [], preds: [] };
+var PH = [['registro', 'Registro'], ['cerrado', 'Predicciones'], ['resultados', 'Resultados'], ['top2', 'Top 2'], ['ganador', 'Ganador']];
+var NEXT = { registro: 'Cerrar registro', cerrado: 'Evaluar', resultados: 'Mostrar top 2', top2: 'Revelar ganador', ganador: 'Fin' };
+var HINT = {
+  registro: 'Los docentes se están registrando. Cuando todos estén listos, cierra el registro.',
+  cerrado: 'Pregunta a cada docente quién cree que ganó y anótalo en el cuaderno. Luego pulsa Evaluar.',
+  resultados: 'Solo tú ves la clasificación. Revísala y, cuando quieras, muestra el top 2 a todos.',
+  top2: 'Todos ven los dos finalistas. Cuando estés listo, revela al ganador.',
+  ganador: 'El ganador ya aparece en las pantallas de todos.'
+};
+function el(tag, text, cls) { var e = document.createElement(tag); if (text != null) e.textContent = text; if (cls) e.className = cls; return e; }
+
+$('#gf').addEventListener('submit', function (ev) {
+  ev.preventDefault(); key = $('#gk').value;
+  if (!key) { $('#ge').textContent = 'Escribe la clave'; return; }
+  connect();
+});
+function connect() {
+  ws = new WebSocket((location.protocol === 'https:' ? 'wss://' : 'ws://') + location.host + '/ws?role=admin&key=' + encodeURIComponent(key));
+  ws.onopen = function () { $('#gate').hidden = true; $('#console').hidden = false; };
+  ws.onclose = function (e) {
+    if (e.code === 4001) { $('#ge').textContent = 'Clave incorrecta'; $('#gate').hidden = false; $('#console').hidden = true; return; }
+    if (!$('#console').hidden) setTimeout(connect, 1500);
+  };
+  ws.onmessage = function (ev) { var m = JSON.parse(ev.data); if (m.t === 'c_admin') { S = m; render(); } };
+}
+function cmd(o) { if (ws && ws.readyState === 1) ws.send(JSON.stringify(o)); }
+$('#next').addEventListener('click', function () { cmd({ t: 'c_cmd', cmd: 'next' }); });
+$('#back').addEventListener('click', function () { cmd({ t: 'c_cmd', cmd: 'back' }); });
+var armed = null;
+$('#reset').addEventListener('click', function () {
+  var b = $('#reset');
+  if (!armed) { b.textContent = '¿Seguro? Pulsa otra vez'; armed = setTimeout(function () { armed = null; b.textContent = 'Reiniciar concurso'; }, 3000); return; }
+  clearTimeout(armed); armed = null; b.textContent = 'Reiniciar concurso'; cmd({ t: 'c_cmd', cmd: 'reset' });
+});
+$('#psave').addEventListener('click', function () {
+  var a = $('#ps').value, b = $('#pp').value;
+  if (!a || !b) return;
+  cmd({ t: 'c_pred', speakerId: a, pickId: b, why: $('#pw').value });
+  $('#pw').value = '';
+});
+
+function syncSelect(sel, list, placeholder) {
+  var cur = sel.value; sel.textContent = '';
+  var o0 = el('option', placeholder); o0.value = ''; sel.appendChild(o0);
+  list.forEach(function (p) { var o = el('option', p.name); o.value = p.id; sel.appendChild(o); });
+  sel.value = list.some(function (p) { return p.id === cur; }) ? cur : '';
+}
+
+function render() {
+  var idx = PH.map(function (p) { return p[0]; }).indexOf(S.phase);
+  var ph = $('#phases'); ph.textContent = '';
+  PH.forEach(function (p, i) { ph.appendChild(el('span', p[1], 'ph' + (i === idx ? ' now' : (i < idx ? ' past' : '')))); });
+  $('#hint').textContent = HINT[S.phase];
+  $('#next').textContent = NEXT[S.phase]; $('#next').hidden = S.phase === 'ganador'; $('#back').hidden = idx === 0;
+
+  var pod = $('#podium'); pod.textContent = '';
+  (S.podium || []).forEach(function (f) {
+    var c = el('div', null, 'pod');
+    c.appendChild(el('div', f.rank === 1 ? 'Primer lugar' : 'Segundo lugar', 'lbl'));
+    c.appendChild(el('div', f.name, 'nm'));
+    if (S.phase === 'ganador') {
+      if (f.pass) c.appendChild(el('div', f.pass, 'pw'));
+      else c.appendChild(el('div', 'Prefirió no mostrar su contraseña', 'lbl'));
+    }
+    var u = el('ul'); f.facts.forEach(function (t) { u.appendChild(el('li', t)); }); c.appendChild(u);
+    c.appendChild(el('div', 'Tardaría: ' + f.time, 'lbl'));
+    pod.appendChild(c);
+  });
+
+  var showEv = idx >= 2;
+  $('#ptitle').textContent = 'Participantes (' + S.parts.length + ')';
+  var th = $('#thead'); th.textContent = '';
+  (showEv ? ['Lugar', 'Nombre', 'Largo', 'Tardaría en caer', 'Notas'] : ['Nombre', 'Estado']).forEach(function (h) { th.appendChild(el('th', h)); });
+  var rows = S.parts.slice();
+  if (showEv) rows.sort(function (a, b) { return a.rank - b.rank; });
+  var tb = $('#tb'); tb.textContent = '';
+  rows.forEach(function (p) {
+    var tr = el('tr');
+    if (showEv) {
+      tr.appendChild(el('td', String(p.rank), 'rk'));
+      tr.appendChild(el('td', p.name));
+      tr.appendChild(el('td', String(p.ev.len), 'mono'));
+      tr.appendChild(el('td', p.ev.time));
+      var notes = []; if (p.ev.inDict) notes.push('en listas comunes'); if (p.ev.hasName) notes.push('usa su nombre'); if (p.ev.words >= 4) notes.push(p.ev.words + ' palabras');
+      tr.appendChild(el('td', notes.join(', ') || '—', 'tag'));
+    } else {
+      var c1 = el('td'); c1.appendChild(el('span', '', 'dot' + (p.online ? ' on' : ''))); c1.appendChild(document.createTextNode(p.name)); tr.appendChild(c1);
+      tr.appendChild(el('td', 'en espera de evaluación', 'tag'));
+    }
+    tb.appendChild(tr);
+  });
+
+  syncSelect($('#ps'), S.parts, 'Quién habla…');
+  syncSelect($('#pp'), S.parts, 'Cree que ganó…');
+  var sum = $('#sum');
+  if (S.summary) { sum.hidden = false; sum.textContent = S.summary.win + ' de ' + S.summary.total + ' acertaron al ganador · ' + S.summary.top2 + ' acertaron a alguno del top 2'; } else sum.hidden = true;
+  var pl = $('#plist'); pl.textContent = '';
+  S.preds.forEach(function (p) {
+    var d = el('div', null, 'pred'); var l = el('div');
+    l.appendChild(el('div', p.speaker + ' cree que ganó ' + p.pick));
+    if (p.why) l.appendChild(el('small', '“' + p.why + '”'));
+    d.appendChild(l);
+    var r = el('div');
+    if (p.win !== null) { r.appendChild(el('span', p.win ? 'acertó' : (p.top2 ? 'top 2' : 'no'), p.win || p.top2 ? 'good' : 'bad')); r.appendChild(document.createTextNode(' ')); }
+    var x = el('button', 'Quitar'); x.addEventListener('click', function () { cmd({ t: 'c_pred_del', speakerId: p.speakerId }); });
+    r.appendChild(x); d.appendChild(r); pl.appendChild(d);
+  });
+  if (!S.preds.length) pl.appendChild(el('small', 'Aún no hay predicciones anotadas.', 'tag'));
+}
+</script>
+</body>
+</html>
